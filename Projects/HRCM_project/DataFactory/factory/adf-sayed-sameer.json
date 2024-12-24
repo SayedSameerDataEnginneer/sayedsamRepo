@@ -1,0 +1,9 @@
+{
+	"name": "adf-sayed-sameer",
+	"location": "centralindia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "d0f5286c-5c21-49eb-ad7a-af75c0086205",
+		"tenantId": "d2f934d8-42cc-487e-9d50-9d11dd357b25"
+	}
+}

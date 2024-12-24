@@ -1,0 +1,48 @@
+{
+	"name": "DS_gen2_HCRM_bronze",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_adls_gen2_healthcare_RCM",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"file_system": {
+				"type": "String"
+			},
+			"Directory": {
+				"type": "String"
+			},
+			"file_name": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "HealthCareRevnueCycleManagmentDataSets"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().file_name",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().Directory",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().file_system",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
