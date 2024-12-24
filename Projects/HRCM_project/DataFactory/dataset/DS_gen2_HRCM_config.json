@@ -1,0 +1,28 @@
+{
+	"name": "DS_gen2_HRCM_config",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_adls_gen2_healthcare_RCM",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "HealthCareRevnueCycleManagmentDataSets"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "config.csv",
+				"folderPath": "project/configs",
+				"fileSystem": "helathcare-revenue-cycle-managment"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

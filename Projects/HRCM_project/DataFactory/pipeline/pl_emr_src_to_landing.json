@@ -1,0 +1,336 @@
+{
+	"name": "pl_emr_src_to_landing",
+	"properties": {
+		"activities": [
+			{
+				"name": "lkp_config_file",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "DS_gen2_HRCM_config",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "for_each_config__file",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "lkp_config_file",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('lkp_config_file').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "get_meta_data_files",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_gen2_HCRM_bronze",
+									"type": "DatasetReference",
+									"parameters": {
+										"file_system": {
+											"value": "@item().Project_deatils",
+											"type": "Expression"
+										},
+										"Directory": {
+											"value": "@concat(item().target_dir,'/',item().specified_target_dir)",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@concat(item().specified_src_dir,'.',item().tgt_file_type)",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"exists"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						},
+						{
+							"name": "If Condition1",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "get_meta_data_files",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@equals(activity('get_meta_data_files').output.exists,true)",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Archive_data",
+										"type": "Copy",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "DelimitedTextSource",
+												"storeSettings": {
+													"type": "AzureBlobFSReadSettings",
+													"recursive": true,
+													"enablePartitionDiscovery": false
+												},
+												"formatSettings": {
+													"type": "DelimitedTextReadSettings"
+												}
+											},
+											"sink": {
+												"type": "DelimitedTextSink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings"
+												},
+												"formatSettings": {
+													"type": "DelimitedTextWriteSettings",
+													"quoteAllText": true,
+													"fileExtension": ".txt"
+												}
+											},
+											"enableStaging": false,
+											"dataIntegrationUnits": 4,
+											"translator": {
+												"type": "TabularTranslator",
+												"typeConversion": true,
+												"typeConversionSettings": {
+													"allowDataTruncation": true,
+													"treatBooleanAsNumber": false
+												}
+											}
+										},
+										"inputs": [
+											{
+												"referenceName": "DS_gen2_HCRM_bronze",
+												"type": "DatasetReference",
+												"parameters": {
+													"file_system": {
+														"value": "@item().Project_deatils",
+														"type": "Expression"
+													},
+													"Directory": {
+														"value": "@concat(item().target_dir,'/',item().specified_target_dir)",
+														"type": "Expression"
+													},
+													"file_name": {
+														"value": "@concat(item().specified_src_dir,'.',item().tgt_file_type)",
+														"type": "Expression"
+													}
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "DS_gen2_HCRM_bronze",
+												"type": "DatasetReference",
+												"parameters": {
+													"file_system": {
+														"value": "@item().Project_deatils",
+														"type": "Expression"
+													},
+													"Directory": {
+														"value": "@concat(item().target_dir,'/',item().specified_target_dir,'/',item().archive_folder,'/',item().specified_src_dir,'/',formatDateTime(utcNow(),'yyyy'),'/',formatDateTime(utcNow(),'%M'),'/',formatDateTime(utcNow(),'%d'))",
+														"type": "Expression"
+													},
+													"file_name": {
+														"value": "@concat(item().specified_src_dir,'.',item().tgt_file_type)",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									}
+								]
+							}
+						},
+						{
+							"name": "if condition 2",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "If Condition1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@or(equals(item().loadtype,'Full' ),equals(item().loadtype,'Incremental'))",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "Wait1",
+										"type": "Wait",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"waitTimeInSeconds": 1
+										}
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "Copy_DATA",
+										"type": "Copy",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "DelimitedTextSource",
+												"storeSettings": {
+													"type": "AzureBlobFSReadSettings",
+													"recursive": true,
+													"enablePartitionDiscovery": false
+												},
+												"formatSettings": {
+													"type": "DelimitedTextReadSettings"
+												}
+											},
+											"sink": {
+												"type": "DelimitedTextSink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings"
+												},
+												"formatSettings": {
+													"type": "DelimitedTextWriteSettings",
+													"quoteAllText": true,
+													"fileExtension": ".txt"
+												}
+											},
+											"enableStaging": false,
+											"translator": {
+												"type": "TabularTranslator",
+												"typeConversion": true,
+												"typeConversionSettings": {
+													"allowDataTruncation": true,
+													"treatBooleanAsNumber": false
+												}
+											}
+										},
+										"inputs": [
+											{
+												"referenceName": "DS_gen2_HCRM_bronze",
+												"type": "DatasetReference",
+												"parameters": {
+													"file_system": {
+														"value": "@item().Project_deatils",
+														"type": "Expression"
+													},
+													"Directory": {
+														"value": "@concat(item().landing_dir,'/',item().datasource_dir,'/',item().specified_src_dir)",
+														"type": "Expression"
+													},
+													"file_name": {
+														"value": "@concat(item().specified_src_dir,'.',item().src_file_type)",
+														"type": "Expression"
+													}
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "DS_gen2_HCRM_bronze",
+												"type": "DatasetReference",
+												"parameters": {
+													"file_system": {
+														"value": "@item().Project_deatils",
+														"type": "Expression"
+													},
+													"Directory": {
+														"value": "@concat(item().target_dir,'/',item().specified_target_dir)",
+														"type": "Expression"
+													},
+													"file_name": {
+														"value": "@concat(item().specified_src_dir,'.',item().tgt_file_type)",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									}
+								]
+							}
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "HealthCareRevenueCycleManagmentPipeLines"
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-12-19T16:42:55Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
